@@ -49,7 +49,7 @@ jobs:
       run: dotnet test ${{ steps.find-sln.outputs.project_file }} --no-build --verbosity normal
 
     - name: Veracode Upload And Scan
-      uses: veracode/veracode-uploadandscan-action@v2  # Versión más reciente
+      uses: veracode/veracode-uploadandscan-action@0.2.6
       with:
         appname: "verademo-net2"
         version: ${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
