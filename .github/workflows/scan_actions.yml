@@ -1,0 +1,46 @@
+name: Veracode SAST and SCA - Upload and Scan
+
+on:
+  # Scan on Push
+  push:
+    branches: [ "develop" ]
+
+
+jobs:
+
+  static_and_sca_analisys_into_pipeline:
+      permissions:
+        contents: read
+        security-events: write
+        actions: read 
+      runs-on: ubuntu-latest
+      name: pipeline static and sca scan
+      steps:
+        - uses: actions/checkout@v4
+      
+        - name: Setup .NET
+          uses: actions/setup-dotnet@v4
+          with:
+            dotnet-version: '8.0.x'
+
+        - name: Build with publish
+          run: |
+            # Buscar el primer archivo .csproj
+            csproj_file=$(find . -name "*.csproj" -print -quit)
+            if [ -z "$csproj_file" ]; then
+              echo "::error::No .csproj file found"
+              exit 1
+            fi
+            
+            # Publicar la aplicación
+            dotnet publish "$csproj_file" -c Release -o ./veracode-upload --no-self-contained
+            
+            # Verificar los archivos generados
+            echo "Generated files:"
+
+        - name: Veracode Pipeline-Scan
+          uses: veracode/Veracode-pipeline-scan-action@v1.0.18
+          with:
+            vid: ${{ secrets.VERACODE_API_ID }}
+            vkey: ${{ secrets.VERACODE_API_KEY }}
+            file: ${{ steps.build.outputs.main_file }}
