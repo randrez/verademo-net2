@@ -58,11 +58,16 @@ jobs:
         vkey: ${{ secrets.VERACODE_API_KEY }}
         filepath: ./veracode-upload
         scanallnonfataltoplevelmodules: true
-        toplevel: true
         deleteincompletescan: true
         debug: true
       continue-on-error: true
 
     - name: Continue Pipeline
       run: echo "El escaneo de Veracode se inició en segundo plano, continuando con el pipeline..."
+
+    - name: Veracode scan results to GitHub issues Action
+      uses: veracode/veracode-flaws-to-issues@v2.2.25
+      with:
+        scan-results-json: 'filtered_results.json'
+          
         
