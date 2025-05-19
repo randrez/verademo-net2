@@ -33,33 +33,11 @@ jobs:
         # Verificar los archivos generados
         echo "Generated files:"
         ls -R ./veracode-upload
-
-    - name: Clean previous incomplete scans
-      run: |
-        # Instalar dependencias para la API de Veracode
-        sudo apt-get update && sudo apt-get install -y curl jq
         
-        # Eliminar escaneos incompletos
-        response=$(curl -s -X GET \
-          -u "${{ secrets.VERACODE_API_ID }}:${{ secrets.VERACODE_API_KEY }}" \
-          "https://analysiscenter.veracode.com/api/5.0/getbuildinfo.do?app_id=2580187")
-        
-        scan_status=$(echo "$response" | jq -r '.build_info.build[0].analysis_unit[0].status')
-        
-        if [ "$scan_status" = "Incomplete" ]; then
-          echo "Deleting incomplete scan..."
-          build_id=$(echo "$response" | jq -r '.build_info.build[0].build_id')
-          curl -X DELETE \
-            -u "${{ secrets.VERACODE_API_ID }}:${{ secrets.VERACODE_API_KEY }}" \
-            "https://analysiscenter.veracode.com/api/5.0/deletebuild.do?build_id=$build_id"
-        else
-          echo "No incomplete scans found"
-        fi
-
     - name: Veracode Upload And Scan
       uses: veracode/veracode-uploadandscan-action@0.2.6
       with:
-        appname: "verademo-net2"
+        appname: "verademo-net4"
         version: ${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
         vid: ${{ secrets.VERACODE_API_ID }}
         vkey: ${{ secrets.VERACODE_API_KEY }}
