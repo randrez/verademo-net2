@@ -24,7 +24,7 @@ jobs:
             dotnet-version: '8.0.x'
 
         - name: Build with publish
-          id: build
+          id: build  # Add an ID so outputs can be referenced
           run: |
             # Buscar el primer archivo .csproj
             csproj_file=$(find . -name "*.csproj" -print -quit)
@@ -36,8 +36,8 @@ jobs:
             # Publicar la aplicación
             dotnet publish "$csproj_file" -c Release -o ./veracode-upload --no-self-contained
             
-            # Verificar los archivos generados
-            echo "Generated files:"
+            # Set the main file as an output
+            echo "::set-output name=main_file::./veracode-upload"
 
         - name: Veracode Pipeline-Scan
           uses: veracode/Veracode-pipeline-scan-action@v1.0.18
