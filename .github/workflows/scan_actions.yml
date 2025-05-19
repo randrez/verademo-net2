@@ -1,50 +1,76 @@
 name: Veracode SAST and SCA - Upload and Scan
 
 on:
-  # Scan on Push
   push:
     branches: [ "develop" ]
 
-
 jobs:
-
   static_and_sca_analisys_into_pipeline:
-      permissions:
-        contents: read
-        security-events: write
-        actions: read 
-      runs-on: ubuntu-latest
-      name: pipeline static and sca scan
-      steps:
-        - uses: actions/checkout@v4
-      
-        - name: Setup .NET
-          uses: actions/setup-dotnet@v4
-          with:
-            dotnet-version: '8.0.x'
+    permissions:
+      contents: read
+      security-events: write
+      actions: read 
+    runs-on: ubuntu-latest
+    name: pipeline static and sca scan
+    steps:
+      - uses: actions/checkout@v4
+    
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
-        - name: Build with publish
-          id: build  # Add an ID so outputs can be referenced
-          run: |
-            # Buscar el primer archivo .csproj
-            csproj_file=$(find . -name "*.csproj" -print -quit)
-            if [ -z "$csproj_file" ]; then
-              echo "::error::No .csproj file found"
-              exit 1
-            fi
-            
-            # Publicar la aplicación
-            dotnet publish "$csproj_file" -c Release -o ./veracode-upload --no-self-contained
-            
-            # Set the main file as an output
-            echo "::set-output name=main_file::./veracode-upload"
-       
-        - name: List published files (debug)
-          run: ls -la ./veracode-upload
-        
-        - name: Veracode Pipeline-Scan
-          uses: veracode/Veracode-pipeline-scan-action@v1.0.18
-          with:
-            vid: ${{ secrets.VERACODE_API_ID }}
-            vkey: ${{ secrets.VERACODE_API_KEY }}
-            file: ${{ steps.build.outputs.main_file }}
+      - name: Build with publish
+        id: build
+        run: |
+          # Buscar el primer archivo .csproj
+          csproj_file=$(find . -name "*.csproj" -print -quit)
+          if [ -z "$csproj_file" ]; then
+            echo "::error::No .csproj file found"
+            exit 1
+          fi
+          
+          # Publicar la aplicación
+          dotnet publish "$csproj_file" -c Release -o ./veracode-upload --no-self-contained
+          
+          # Crear archivo ZIP con los binarios (necesario para Pipeline Scan)
+          cd ./veracode-upload
+          zip -r ../veracode-scan-package.zip *
+          cd ..
+          
+          # Guardar rutas como outputs
+          echo "zip_path=veracode-scan-package.zip" >> $GITHUB_OUTPUT
+          echo "dir_path=./veracode-upload" >> $GITHUB_OUTPUT
+
+      - name: Veracode Pipeline-Scan (SAST)
+        uses: veracode/Veracode-pipeline-scan-action@v1.0.18
+        with:
+          vid: ${{ secrets.VERACODE_API_ID }}
+          vkey: ${{ secrets.VERACODE_API_KEY }}
+          file: ${{ steps.build.outputs.zip_path }}  # Usar el archivo ZIP
+          token: ${{ github.token }}
+          veracode_policy_name: "Veracode Recommended"
+          fail_on_severity: "Very High,High"
+          timeout: 30
+          json_output: true
+          json_output_file: veracode-sast-results.json
+          debug: 1
+
+      - name: Veracode SCA Scan
+        uses: veracode/veracode-sca-scan-action@v1
+        with:
+          projectName: "verademo-net2"
+          veracodeApiId: ${{ secrets.VERACODE_API_ID }}
+          veracodeApiKey: ${{ secrets.VERACODE_API_KEY }}
+          directory: ${{ steps.build.outputs.dir_path }}
+          failBuildOnPolicyViolation: true
+
+      - name: Upload Scan Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: veracode-scan-results
+          path: |
+            veracode-sast-results.json
+            sca-results.json
+          retention-days: 7
