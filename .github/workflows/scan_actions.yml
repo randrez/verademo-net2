@@ -24,6 +24,7 @@ jobs:
             dotnet-version: '8.0.x'
 
         - name: Build with publish
+          id: build
           run: |
             # Buscar el primer archivo .csproj
             csproj_file=$(find . -name "*.csproj" -print -quit)
