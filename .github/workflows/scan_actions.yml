@@ -38,7 +38,10 @@ jobs:
             
             # Set the main file as an output
             echo "::set-output name=main_file::./veracode-upload"
-
+       
+        - name: List published files (debug)
+          run: ls -la ./veracode-upload
+        
         - name: Veracode Pipeline-Scan
           uses: veracode/Veracode-pipeline-scan-action@v1.0.18
           with:
