@@ -61,6 +61,7 @@ jobs:
         deleteincompletescan: true
         debug: true
         scanpollinginterval: 30
+        scantimeout: 1800 
       continue-on-error: false
 
     - name: Upload Veracode Scan Results
@@ -68,6 +69,13 @@ jobs:
       with:
         name: filtered-results
         path: ./veracode-upload/filtered_results.json
+
+    - name: Wait for Scan Processing
+      if: always()  # Siempre ejecuta este paso
+      run: |
+        # Espera tiempo adicional para procesamiento en Veracode
+        echo "Esperando 5 minutos para procesamiento de resultados..."
+        sleep 300
         
     - name: Veracode scan results to GitHub issues Action
       uses: veracode/veracode-flaws-to-issues@v2.2.25
