@@ -33,21 +33,6 @@ jobs:
         # Verificar los archivos generados
         echo "Generated files:"
         ls -R ./veracode-upload
-        
-    - name: Prepare Veracode Scan
-      id: prepare-scan
-      run: |
-        # Encontrar todos los archivos ejecutables
-        echo "Files to be scanned:"
-        find ./veracode-upload -type f \( -name "*.dll" -o -name "*.exe" \) -print
-        
-        # Contar archivos para verificación
-        FILE_COUNT=$(find ./veracode-upload -type f \( -name "*.dll" -o -name "*.exe" \) | wc -l)
-        echo "file_count=$FILE_COUNT" >> $GITHUB_OUTPUT
-        if [ "$FILE_COUNT" -eq 0 ]; then
-          echo "::error::No DLL/EXE files found for scanning"
-          exit 1
-        fi
 
     - name: Veracode Upload And Scan
       uses: veracode/veracode-uploadandscan-action@0.2.6
