@@ -52,7 +52,6 @@ jobs:
     - name: Veracode Upload And Scan
       uses: veracode/veracode-uploadandscan-action@0.2.6
       with:
-        appname: "verademo-net4"
         version: ${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
         vid: ${{ secrets.VERACODE_API_ID }}
         vkey: ${{ secrets.VERACODE_API_KEY }}
@@ -60,11 +59,14 @@ jobs:
         scanallnonfataltoplevelmodules: true
         deleteincompletescan: true
         debug: true
-      continue-on-error: true
+        scanpollinginterval: 30
+      continue-on-error: false
 
-    - name: Continue Pipeline
-      run: echo "El escaneo de Veracode se inició en segundo plano, continuando con el pipeline..."
-
+    - name: get scan results
+      uses: actions/download-artifact@v3
+      with:
+        name: filtered-results
+        
     - name: Veracode scan results to GitHub issues Action
       uses: veracode/veracode-flaws-to-issues@v2.2.25
       with:
