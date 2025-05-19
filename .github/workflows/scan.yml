@@ -1,7 +1,4 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
+name: .NET CI/CD with Veracode Scanning
 
 on:
   push:
@@ -10,31 +7,55 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
+  build-and-scan:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Asegura que se clone todo el historial del repo
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: '8.0.x'
+
+    - name: Find Solution File
+      id: find-sln
+      run: |
+        # Busca archivos .sln en el repositorio
+        sln_file=$(find . -name "*.sln" -print -quit)
+        if [ -z "$sln_file" ]; then
+          echo "No se encontró archivo .sln, buscando .csproj..."
+          csproj_file=$(find . -name "*.csproj" -print -quit)
+          if [ -z "$csproj_file" ]; then
+            echo "::error::No se encontró ningún archivo .sln o .csproj"
+            exit 1
+          else
+            echo "project_file=$csproj_file" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "project_file=$sln_file" >> $GITHUB_OUTPUT
+        fi
+        echo "Archivo encontrado: ${{ steps.find-sln.outputs.project_file }}"
+
     - name: Restore dependencies
-      run: dotnet restore
-      
+      run: dotnet restore ${{ steps.find-sln.outputs.project_file }}
+
     - name: Build
-      run: dotnet build --no-restore
-    
+      run: dotnet build ${{ steps.find-sln.outputs.project_file }} --no-restore --configuration Release
+
     - name: Test
-      run: dotnet test --no-build --verbosity normal
-    
+      run: dotnet test ${{ steps.find-sln.outputs.project_file }} --no-build --verbosity normal
+
     - name: Veracode Upload And Scan
-      uses: veracode/veracode-uploadandscan-action@0.2.6
+      uses: veracode/veracode-uploadandscan-action@v2  # Versión más reciente
       with:
         appname: "verademo-net2"
         version: ${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
-        vid: ${{secrets.VERACODE_API_ID}}
-        vkey: ${{secrets.VERACODE_API_KEY }}
+        vid: ${{ secrets.VERACODE_API_ID }}
+        vkey: ${{ secrets.VERACODE_API_KEY }}
+        filepath: ${{ github.workspace }}/bin/Release/net8.0/  # Ajusta según tu estructura de proyecto
+        createnewapp: true  # Crea la app si no existe
+        scanwait: true  # Espera a que termine el escaneo
         debug: true
-              
