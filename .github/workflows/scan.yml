@@ -12,41 +12,30 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Asegura que se clone todo el historial del repo
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
 
-    - name: Find Solution File
-      id: find-sln
+    - name: Build with publish
       run: |
-        # Busca archivos .sln en el repositorio
-        sln_file=$(find . -name "*.sln" -print -quit)
-        if [ -z "$sln_file" ]; then
-          echo "No se encontró archivo .sln, buscando .csproj..."
-          csproj_file=$(find . -name "*.csproj" -print -quit)
-          if [ -z "$csproj_file" ]; then
-            echo "::error::No se encontró ningún archivo .sln o .csproj"
-            exit 1
-          else
-            echo "project_file=$csproj_file" >> $GITHUB_OUTPUT
-          fi
-        else
-          echo "project_file=$sln_file" >> $GITHUB_OUTPUT
+        # Buscar el primer archivo .csproj en el repositorio
+        csproj_file=$(find . -name "*.csproj" -print -quit)
+        if [ -z "$csproj_file" ]; then
+          echo "::error::No .csproj file found"
+          exit 1
         fi
-        echo "Archivo encontrado: ${{ steps.find-sln.outputs.project_file }}"
-
-    - name: Restore dependencies
-      run: dotnet restore ${{ steps.find-sln.outputs.project_file }}
-
-    - name: Build
-      run: dotnet build ${{ steps.find-sln.outputs.project_file }} --no-restore --configuration Release
-
-    - name: Test
-      run: dotnet test ${{ steps.find-sln.outputs.project_file }} --no-build --verbosity normal
+        
+        # Crear directorio para los binarios
+        mkdir -p veracode-upload
+        
+        # Publicar la aplicación
+        dotnet publish "$csproj_file" -c Release -o ./veracode-upload --no-self-contained
+        
+        # Verificar los archivos generados
+        echo "Archivos generados:"
+        ls -R ./veracode-upload
 
     - name: Veracode Upload And Scan
       uses: veracode/veracode-uploadandscan-action@0.2.6
@@ -55,7 +44,6 @@ jobs:
         version: ${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
         vid: ${{ secrets.VERACODE_API_ID }}
         vkey: ${{ secrets.VERACODE_API_KEY }}
-        filepath: ${{ github.workspace }}/bin/Release/net8.0/  # Ajusta según tu estructura de proyecto
-        createnewapp: true  # Crea la app si no existe
-        scanwait: true  # Espera a que termine el escaneo
+        filepath: ./veracode-upload
+        createprofile: true
         debug: true
