@@ -61,7 +61,6 @@ jobs:
         deleteincompletescan: true
         debug: true
         scanpollinginterval: 30
-        scantimeout: 1800 
       continue-on-error: false
 
     - name: Upload Veracode Scan Results
