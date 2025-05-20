@@ -47,3 +47,17 @@ jobs:
         debug: true
         scanpollinginterval: 30
       continue-on-error: true
+
+    - name: Create GitHub Issue with Veracode Scan Summary
+      if: always()
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Dummy summary for illustration; replace with command to extract real summary
+        SUMMARY=$(echo "Veracode scan completed. Check Veracode dashboard for detailed results.")
+
+        # Create the issue using GitHub CLI
+        gh issue create \
+          --title "Veracode Scan Results - $GITHUB_RUN_ID" \
+          --body "$SUMMARY" \
+          --repo "$GITHUB_REPOSITORY"
