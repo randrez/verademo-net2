@@ -47,13 +47,13 @@ jobs:
         with:
           vid: ${{ secrets.VERACODE_API_ID }}
           vkey: ${{ secrets.VERACODE_API_KEY }}
-          file: ${{ steps.build.outputs.zip_path }}  # Usar el archivo ZIP
+          file: ${{ steps.build.outputs.zip_path }}
           token: ${{ github.token }}
           veracode_policy_name: "Veracode Recommended"
           fail_on_severity: "Very High,High"
           timeout: 30
           json_output: true
-          json_output_file: veracode-sast-results.json
+          json_output_file: /veracode-upload/veracode-sast-results.json
           debug: 1
 
       - name: Upload Scan Results
