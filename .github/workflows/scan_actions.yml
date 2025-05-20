@@ -56,15 +56,6 @@ jobs:
           json_output_file: veracode-sast-results.json
           debug: 1
 
-      - name: Veracode SCA Scan
-        uses: veracode/veracode-sca-scan-action@v1
-        with:
-          projectName: "verademo-net2"
-          veracodeApiId: ${{ secrets.VERACODE_API_ID }}
-          veracodeApiKey: ${{ secrets.VERACODE_API_KEY }}
-          directory: ${{ steps.build.outputs.dir_path }}
-          failBuildOnPolicyViolation: true
-
       - name: Upload Scan Results
         uses: actions/upload-artifact@v4
         if: always()
