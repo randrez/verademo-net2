@@ -66,6 +66,7 @@ jobs:
           veracodeApiKey: ${{ secrets.VERACODE_API_KEY }}
           directory: ./veracode-upload
           failBuildOnPolicyViolation: true
+          debug: false
 
       - name: Upload Scan Results
         uses: actions/upload-artifact@v4
