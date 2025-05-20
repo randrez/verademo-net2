@@ -53,9 +53,19 @@ jobs:
           fail_on_severity: "Very High,High"
           timeout: 30
           json_output: true
-          json_output_file: /veracode-upload/veracode-sast-results.json
+          json_output_file: "veracode-sast-results.json"
+          filtered_json_output_file: "veracode-filtered-results.json"
           debug: 1
           fail_build: true
+   
+      - name: Veracode SCA Scan
+        uses: veracode/veracode-sca@v2.1.11
+        with:
+          projectName: "verademo-net2"
+          veracodeApiId: ${{ secrets.VERACODE_API_ID }}
+          veracodeApiKey: ${{ secrets.VERACODE_API_KEY }}
+          directory: ./veracode-upload
+          failBuildOnPolicyViolation: true
 
       - name: Upload Scan Results
         uses: actions/upload-artifact@v4
