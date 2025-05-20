@@ -55,6 +55,7 @@ jobs:
           json_output: true
           json_output_file: /veracode-upload/veracode-sast-results.json
           debug: 1
+          fail_build: true
 
       - name: Upload Scan Results
         uses: actions/upload-artifact@v4
